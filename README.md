@@ -497,15 +497,16 @@ This repository now includes a lightweight Python workflow for users who want to
 python -m pip install -r requirements.txt
 ```
 
-4. Copy `.env.example` to your own environment configuration and export the values in IDEA's Run Configuration:
+4. Configure the OpenAI GPT API values in IDEA's Run Configuration. See [GPT API 配置说明](docs/OPENAI_GPT_CONFIG_CN.md) for the Windows + IntelliJ IDEA setup.
 
-```bash
-export AI_API_KEY="your-api-key"
-export AI_API_BASE_URL="https://api.openai.com/v1"
-export AI_MODEL="gpt-4o-mini"
+```powershell
+AI_API_KEY=your-openai-api-key
+AI_API_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+AI_TIMEOUT_SECONDS=120
 ```
 
-`AI_API_BASE_URL` may point to any service that implements the OpenAI-compatible `/chat/completions` interface.
+`AI_API_BASE_URL` may point to any service that implements the OpenAI-compatible `/chat/completions` interface. Use `https://api.openai.com/v1` for the official OpenAI GPT API.
 
 ### **Workflow**
 
