@@ -470,3 +470,95 @@ Special thanks to friends who provided valuable feedback:
 - Lizi
 
 Thanks to Jian for the English translation and to Hik3 for designing the cover image.
+
+## **Academic Paper Style Learning and Polishing Tool**
+
+This repository now includes a lightweight Python workflow for users who want to learn reusable writing style from many English academic PDFs and then polish their own draft into that learned paper style. The workflow is designed to be opened in IntelliJ IDEA/PyCharm as a Python project and to call an OpenAI-compatible chat-completion API.
+
+### **Module Responsibilities**
+
+| Module | Responsibility |
+| --- | --- |
+| `paper_style_ai/pdf_reader.py` | Reads PDF files, extracts readable page text, and keeps source/page metadata for traceability. |
+| `paper_style_ai/chunker.py` | Splits long extracted text into overlapping chunks that fit LLM context windows while preserving sentence boundaries. |
+| `paper_style_ai/semantic_analyzer.py` | Sends each chunk to the API for semantic style analysis, focusing on rhetorical moves, sentence habits, hedging, transitions, evidence integration, and reusable templates. |
+| `paper_style_ai/style_template.py` | Loads the learned JSON template and renders it into prompt-ready guidance. |
+| `paper_style_ai/polisher.py` | Applies the learned template to a user draft and returns the polished text plus revision notes and evidence warnings. |
+| `paper_style_ai/cli.py` | Provides the end-to-end command-line interface: `learn` for PDF-library analysis and `polish` for final draft rewriting. |
+| `tests/` | Contains code-review safety checks for chunking and template loading behavior. |
+
+### **IDEA / PyCharm Setup**
+
+1. Open this repository in IntelliJ IDEA or PyCharm.
+2. Configure a Python 3.11+ interpreter for the project.
+3. Install dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+4. Configure the OpenAI GPT API values in IDEA's Run Configuration. See [GPT API 配置说明](docs/OPENAI_GPT_CONFIG_CN.md) for the Windows + IntelliJ IDEA setup.
+
+```powershell
+AI_API_KEY=your-openai-api-key
+AI_API_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+AI_TIMEOUT_SECONDS=120
+```
+
+`AI_API_BASE_URL` may point to any service that implements the OpenAI-compatible `/chat/completions` interface. Use `https://api.openai.com/v1` for the official OpenAI GPT API.
+
+### **Workflow**
+
+#### **1. Learn the style of your PDF library**
+
+Put the English papers into a local folder such as `data/papers/`, then run:
+
+```bash
+python -m paper_style_ai.cli learn \
+  --pdf-dir data/papers \
+  --output outputs/style_analysis.json \
+  --max-tokens 900 \
+  --overlap-tokens 120
+```
+
+For a low-cost trial, limit the number of chunks sent to the API:
+
+```bash
+python -m paper_style_ai.cli learn \
+  --pdf-dir data/papers \
+  --output outputs/style_analysis_sample.json \
+  --limit-chunks 5
+```
+
+The output JSON contains:
+
+- `chunks`: extracted and chunked text with token estimates.
+- `analyses`: API-generated semantic style analysis for each chunk.
+- `template`: a reusable academic writing template synthesized from the analyzed corpus.
+
+#### **2. Polish your own draft with the learned template**
+
+Save your draft as plain text, for example `data/my_draft.txt`, then run:
+
+```bash
+python -m paper_style_ai.cli polish \
+  --template outputs/style_analysis.json \
+  --draft data/my_draft.txt \
+  --output outputs/polished_draft.json
+```
+
+If `--output` is omitted, the polished result is printed directly to the terminal. The API response includes `polished_text`, `revision_notes`, `retained_claims`, and `missing_evidence_warnings` so you can review what changed and avoid invented evidence.
+
+### **中文说明：论文库风格学习与润色流程**
+
+该工具面向“输入大量国外英文论文 PDF，提取论文表达习惯，最后润色自己的文章”的场景：
+
+1. `pdf_reader` 负责识别并读取 PDF 文字。
+2. `chunker` 负责把长论文切成可进入模型上下文的 chunk，并保留一定重叠，避免语义断裂。
+3. `semantic_analyzer` 负责连接 API，对每个 chunk 进行语义识别，归纳名校论文中的论证方式、句式、转折、弱化表达、证据组织方式和常用模板。
+4. `style_template` 负责保存和读取可复用风格模板。
+5. `polisher` 负责在你给出自己的文章后，按照训练出的模板进行英文论文风格润色，并直接输出结果。
+6. `cli` 串联完整流程，方便在 IDEA/PyCharm 的 Run Configuration 中配置参数后运行。
+
+注意：该流程学习的是表达风格和论文写作习惯，不会也不应伪造引用、实验结果或数据。如果原稿缺少证据，润色结果会在 `missing_evidence_warnings` 中提示。
